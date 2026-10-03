@@ -62,6 +62,19 @@ async function migrate() {
       price NUMERIC(10,2) NOT NULL,
       qty INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS homepage_banners (
+      id SERIAL PRIMARY KEY,
+      position INTEGER NOT NULL UNIQUE,
+      title TEXT NOT NULL DEFAULT '',
+      subtitle TEXT NOT NULL DEFAULT '',
+      button_text TEXT NOT NULL DEFAULT '',
+      button_link TEXT NOT NULL DEFAULT '',
+      image_url TEXT NOT NULL DEFAULT '',
+      badge_text TEXT NOT NULL DEFAULT '',
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT`);
 }
@@ -121,6 +134,20 @@ async function seedFeaturedProduct() {
   );
 }
 
+
+async function seedBanners() {
+  const count = await pool.query("SELECT COUNT(*) AS c FROM homepage_banners");
+  if (Number(count.rows[0].c) > 0) return;
+  const rows = [
+    [1, "Galaxy S24 Ultra", "تجربة جديدة من القوة والأداء", "تسوّق الآن", "#grid-deals", "", ""],
+    [2, "شحن أسرع", "توصيل مجاني لجميع الطلبات", "", "", "", ""],
+    [3, "خصومات حتى", "", "", "", "", "30%"]
+  ];
+  for (const r of rows) {
+    await pool.query(`INSERT INTO homepage_banners (position,title,subtitle,button_text,button_link,image_url,badge_text) VALUES ($1,$2,$3,$4,$5,$6,$7)`, r);
+  }
+}
+
 let initPromise = null;
 
 // Safe to call on every request — only does real work once per warm
@@ -133,6 +160,7 @@ function init() {
       await seedAdmin();
       await seedProducts();
       await seedFeaturedProduct();
+      await seedBanners();
     })().catch((err) => {
       initPromise = null; // allow retrying on the next request if this failed
       throw err;

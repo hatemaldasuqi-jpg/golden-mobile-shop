@@ -61,6 +61,7 @@
     <div class="tabs">
       <button class="tab active" id="tab-products" onclick="switchTab('products')">المنتجات</button>
       <button class="tab" id="tab-orders" onclick="switchTab('orders')">الطلبات</button>
+      <button class="tab" id="tab-banners" onclick="switchTab('banners')">واجهة المتجر</button>
     </div>
 
     <!-- Products tab -->
@@ -71,6 +72,12 @@
         <div class="row">
           <div class="field"><label>الاسم (عربي)</label><input id="p-name"></div>
           <div class="field"><label>الاسم (English)</label><input id="p-name-en"></div>
+        </div>
+        <div class="field"><label>صورة المنتج</label>
+          <input id="p-image-file" type="file" accept="image/*" onchange="previewProductImage(this)">
+          <input id="p-image-url" type="hidden">
+          <img id="p-image-preview" alt="معاينة صورة المنتج" style="display:none;max-width:180px;max-height:180px;object-fit:contain;border:1px solid var(--line);border-radius:10px;margin-top:8px;padding:6px;background:#fff">
+          <span class="muted">اختر صورة من جهازك. يمكنك أيضاً تغييرها لاحقاً عند تعديل المنتج.</span>
         </div>
         <div class="row">
           <div class="field"><label>السعر الحالي (JD)</label><input id="p-price" type="number" step="0.01"></div>
@@ -111,6 +118,14 @@
         </table>
       </div>
     </div>
+
+    <div id="panel-banners" class="hidden">
+      <div class="card">
+        <h3 style="margin-top:0">تعديل واجهة المتجر</h3>
+        <p class="muted">غيّر الصور والنصوص للبانر الكبير والمربعين الجانبيين ثم اضغط حفظ.</p>
+        <div id="banners-list"></div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -145,13 +160,17 @@ function enterDashboard(){
   document.getElementById('who').textContent = me.name + ' · ' + me.email;
   loadProducts();
   loadOrders();
+  loadBannersAdmin();
 }
 
 function switchTab(tab){
   document.getElementById('tab-products').classList.toggle('active', tab==='products');
   document.getElementById('tab-orders').classList.toggle('active', tab==='orders');
+  document.getElementById('tab-banners').classList.toggle('active', tab==='banners');
   document.getElementById('panel-products').classList.toggle('hidden', tab!=='products');
   document.getElementById('panel-orders').classList.toggle('hidden', tab!=='orders');
+  document.getElementById('panel-banners').classList.toggle('hidden', tab!=='banners');
+  if(tab==='banners') loadBannersAdmin();
 }
 
 /* ---- products ---- */
@@ -161,7 +180,7 @@ async function loadProducts(){
   var data = await res.json();
   var tbody = document.getElementById('products-table');
   tbody.innerHTML = data.products.map(function(p){
-    return '<tr><td>' + p.name + '</td><td>' + p.price.toFixed(2) + ' JD</td><td>' + (p.section==='deals'?'عروض اليوم':'وصل حديثاً') + '</td>' +
+    return '<tr><td>' + p.name + '</td><td>' + Number(p.price).toFixed(2) + ' JD</td><td>' + (p.section==='deals'?'عروض اليوم':'وصل حديثاً') + '</td>' +
       '<td>' + (p.is_active ? '✓' : '—') + '</td>' +
       '<td><button class="btn secondary small" onclick=\'editProduct(' + JSON.stringify(p) + ')\'>تعديل</button> ' +
       '<button class="btn danger small" onclick="deleteProduct(' + p.id + ')">حذف</button></td></tr>';
@@ -178,6 +197,8 @@ function editProduct(p){
   document.getElementById('p-discount').value = p.discount_pct || '';
   document.getElementById('p-section').value = p.section;
   document.getElementById('p-icon').value = p.icon;
+  document.getElementById('p-image-url').value = p.image_url || '';
+  var prev=document.getElementById('p-image-preview'); if(p.image_url){prev.src=p.image_url;prev.style.display='block';}else{prev.removeAttribute('src');prev.style.display='none';}
   document.getElementById('cancel-edit-btn').style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -186,8 +207,17 @@ function resetProductForm(){
   ['p-id','p-name','p-name-en','p-price','p-old-price','p-discount'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('p-section').value = 'deals';
   document.getElementById('p-icon').value = 'phone';
+  document.getElementById('p-image-url').value = '';
+  document.getElementById('p-image-file').value = '';
+  var prev=document.getElementById('p-image-preview'); prev.removeAttribute('src'); prev.style.display='none';
   document.getElementById('cancel-edit-btn').style.display = 'none';
   document.getElementById('p-error').innerHTML = '';
+}
+
+function previewProductImage(input){
+  var file=input.files && input.files[0]; if(!file) return;
+  if(file.size > 3000000){ document.getElementById('p-error').innerHTML='<div class="error">الصورة كبيرة. اختر صورة أقل من 3MB</div>'; input.value=''; return; }
+  var reader=new FileReader(); reader.onload=function(){ document.getElementById('p-image-url').value=reader.result; var prev=document.getElementById('p-image-preview'); prev.src=reader.result; prev.style.display='block'; }; reader.readAsDataURL(file);
 }
 
 async function saveProduct(){
@@ -199,7 +229,8 @@ async function saveProduct(){
     old_price: document.getElementById('p-old-price').value ? parseFloat(document.getElementById('p-old-price').value) : null,
     discount_pct: document.getElementById('p-discount').value ? parseInt(document.getElementById('p-discount').value) : null,
     section: document.getElementById('p-section').value,
-    icon: document.getElementById('p-icon').value
+    icon: document.getElementById('p-icon').value,
+    image_url: document.getElementById('p-image-url').value || null
   };
   if(!payload.name || !payload.price){
     document.getElementById('p-error').innerHTML = '<div class="error">الاسم والسعر مطلوبين</div>';
@@ -230,13 +261,41 @@ async function loadOrders(){
   tbody.innerHTML = data.orders.map(function(o){
     var opts = statuses.map(function(s){ return '<option value="'+s+'"' + (s===o.status?' selected':'') + '>'+s+'</option>'; }).join('');
     return '<tr><td>#' + o.id + '</td><td>' + o.customer_name + '</td><td>' + o.phone + '</td><td>' + o.address + '</td>' +
-      '<td>' + o.total.toFixed(2) + ' JD</td>' +
+      '<td>' + Number(o.total).toFixed(2) + ' JD</td>' +
       '<td><select class="status-select" onchange="updateStatus(' + o.id + ',this.value)">' + opts + '</select></td>' +
       '<td>' + o.created_at + '</td></tr>';
   }).join('');
 }
 async function updateStatus(id, status){
   await fetch('/api/orders/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status:status})});
+}
+
+/* ---- storefront banners ---- */
+var adminBanners=[];
+async function loadBannersAdmin(){
+  var res=await fetch('/api/banners'); if(!res.ok)return; var data=await res.json(); adminBanners=data.banners||[];
+  var labels={1:'البانر الرئيسي',2:'المربع الجانبي الأول',3:'المربع الجانبي الثاني'};
+  document.getElementById('banners-list').innerHTML=adminBanners.map(function(b){
+    var preview=b.image_url?'<img src="'+b.image_url+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin:8px 0">':'';
+    return '<div style="border-top:1px solid var(--line);padding:18px 0" data-banner="'+b.id+'"><h4>'+(labels[b.position]||('بانر '+b.position))+'</h4>'+preview+
+      '<div class="row"><div class="field"><label>العنوان</label><input class="b-title" value="'+escAttr(b.title)+'"></div><div class="field"><label>النص</label><input class="b-subtitle" value="'+escAttr(b.subtitle)+'"></div></div>'+
+      '<div class="row"><div class="field"><label>نص الزر</label><input class="b-button" value="'+escAttr(b.button_text)+'"></div><div class="field"><label>رابط الزر</label><input class="b-link" value="'+escAttr(b.button_link)+'"></div><div class="field"><label>الخصم / النص الكبير</label><input class="b-badge" value="'+escAttr(b.badge_text)+'"></div></div>'+
+      '<div class="field"><label>الصورة — اختر صورة جديدة من جهازك</label><input class="b-file" type="file" accept="image/*"></div>'+
+      '<label style="display:flex;gap:8px;align-items:center;margin:8px 0 14px"><input class="b-active" type="checkbox" '+(b.is_active?'checked':'')+'> إظهار في الواجهة</label>'+
+      '<button class="btn" onclick="saveBanner('+b.id+')">حفظ التعديل</button><span class="b-msg muted" style="margin-right:10px"></span></div>';
+  }).join('');
+}
+function escAttr(v){return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fileData(file){return new Promise(function(resolve,reject){if(!file)return resolve(null); if(file.size>3000000)return reject(new Error('الصورة أكبر من 3MB')); var r=new FileReader();r.onload=function(){resolve(r.result)};r.onerror=reject;r.readAsDataURL(file);});}
+async function saveBanner(id){
+  var box=document.querySelector('[data-banner="'+id+'"]'), old=adminBanners.find(function(x){return Number(x.id)===Number(id);});
+  var msg=box.querySelector('.b-msg'); msg.textContent='جاري الحفظ...';
+  try{
+    var file=box.querySelector('.b-file').files[0], image=await fileData(file);
+    var payload={title:box.querySelector('.b-title').value,subtitle:box.querySelector('.b-subtitle').value,button_text:box.querySelector('.b-button').value,button_link:box.querySelector('.b-link').value,badge_text:box.querySelector('.b-badge').value,is_active:box.querySelector('.b-active').checked,image_url:image!==null?image:(old?old.image_url:'')};
+    var res=await fetch('/api/banners/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); var data=await res.json(); if(!res.ok)throw new Error(data.error||'فشل الحفظ');
+    msg.textContent='✓ تم الحفظ'; await loadBannersAdmin();
+  }catch(e){msg.textContent=e.message||'حدث خطأ';}
 }
 
 /* ---- boot: if already logged in as admin, skip the login screen ---- */

@@ -71,6 +71,9 @@
     color:#fff; position:relative; overflow:hidden; min-height:190px; display:flex; flex-direction:column;
     justify-content:center; text-align:left; direction:ltr;
   }
+  .hero-banner.has-image{background-size:cover;background-position:center;}
+  .hero-banner.has-image:before{content:"";position:absolute;inset:0;background:rgba(10,30,90,.45);}
+  .hero-banner.has-image > *{position:relative;z-index:1;}
   .hero-banner h2{font-size:1.55rem; font-weight:900; margin-bottom:6px; line-height:1.2;}
   .hero-banner p{font-size:.78rem; color:#C9D6F5; margin-bottom:16px; max-width:18ch;}
   .hero-cta{background:#fff; color:var(--blue-dark); font-weight:700; font-size:.8rem; padding:9px 18px; border-radius:9px; border:none; width:fit-content;}
@@ -234,10 +237,10 @@
 <main>
   <section class="hero-section">
     <div class="hero-grid">
-      <div class="hero-banner">
-        <h2>Galaxy<br>S24 Ultra</h2>
-        <p data-i18n="hero_desc">تجربة جديدة من القوة والأداء</p>
-        <button class="hero-cta" data-i18n="hero_cta" onclick="scrollToProducts()">تسوّق الآن</button>
+      <div class="hero-banner" id="banner-main">
+        <h2 id="hero-title">Galaxy<br>S24 Ultra</h2>
+        <p id="hero-subtitle">تجربة جديدة من القوة والأداء</p>
+        <button class="hero-cta" id="hero-button" onclick="heroAction()">تسوّق الآن</button>
         <svg class="hero-phone" viewBox="0 0 100 200" aria-hidden="true">
           <rect x="18" y="4" width="64" height="192" rx="20" fill="#C9CFDA"/>
           <rect x="24" y="10" width="52" height="180" rx="15" fill="#8A93A6"/>
@@ -252,8 +255,8 @@
         <div class="hero-dots"><span></span><span class="on"></span><span></span><span></span></div>
       </div>
       <div class="side-tiles">
-        <div class="tile"><div class="tile-text" data-i18n="tile_ship">شحن أسرع وتوصيل مجاني لجميع الطلبات</div><svg class="ic"><use href="#i-truck"/></svg></div>
-        <div class="tile dark"><div class="tile-text"><span data-i18n="tile_disc">خصومات حتى</span><span class="big">30%</span></div><svg class="ic"><use href="#i-percent"/></svg></div>
+        <div class="tile" id="banner-side-1"><div class="tile-text" id="side1-text">شحن أسرع وتوصيل مجاني لجميع الطلبات</div><svg class="ic"><use href="#i-truck"/></svg></div>
+        <div class="tile dark" id="banner-side-2"><div class="tile-text"><span id="side2-title">خصومات حتى</span><span class="big" id="side2-badge">30%</span></div><svg class="ic"><use href="#i-percent"/></svg></div>
       </div>
     </div>
   </section>
@@ -423,6 +426,26 @@ var pendingCheckout = false;
 var authMode = "login"; // login | register
 var view = "cart"; // cart | checkout | done | account
 var t = function(k){ var l = document.documentElement.getAttribute('lang') || 'ar'; return (I18N[k] && I18N[k][l]) || ''; };
+
+var homepageBanners = [];
+async function loadBanners(){
+  try{
+    var res=await fetch('/api/banners'); if(!res.ok) return;
+    var data=await res.json(); homepageBanners=data.banners||[];
+    var b1=homepageBanners.find(function(b){return Number(b.position)===1;});
+    var b2=homepageBanners.find(function(b){return Number(b.position)===2;});
+    var b3=homepageBanners.find(function(b){return Number(b.position)===3;});
+    if(b1){
+      var main=document.getElementById('banner-main'); main.style.display=b1.is_active?'flex':'none';
+      document.getElementById('hero-title').textContent=b1.title||''; document.getElementById('hero-subtitle').textContent=b1.subtitle||'';
+      var btn=document.getElementById('hero-button'); btn.textContent=b1.button_text||'تسوّق الآن'; btn.style.display=b1.button_text?'block':'none';
+      if(b1.image_url){ main.classList.add('has-image'); main.style.backgroundImage='url("'+String(b1.image_url).replace(/"/g,'%22')+'")'; var phone=main.querySelector('.hero-phone'); if(phone) phone.style.display='none'; }
+    }
+    if(b2){ var e=document.getElementById('banner-side-1'); e.style.display=b2.is_active?'flex':'none'; document.getElementById('side1-text').textContent=[b2.title,b2.subtitle].filter(Boolean).join(' '); if(b2.image_url){e.style.backgroundImage='linear-gradient(rgba(20,60,180,.35),rgba(20,60,180,.35)),url("'+String(b2.image_url).replace(/"/g,'%22')+'")';e.style.backgroundSize='cover';e.style.backgroundPosition='center';} }
+    if(b3){ var e3=document.getElementById('banner-side-2'); e3.style.display=b3.is_active?'flex':'none'; document.getElementById('side2-title').textContent=b3.title||''; document.getElementById('side2-badge').textContent=b3.badge_text||b3.subtitle||''; if(b3.image_url){e3.style.backgroundImage='linear-gradient(rgba(10,30,90,.4),rgba(10,30,90,.4)),url("'+String(b3.image_url).replace(/"/g,'%22')+'")';e3.style.backgroundSize='cover';e3.style.backgroundPosition='center';} }
+  }catch(e){}
+}
+function heroAction(){ var b=homepageBanners.find(function(x){return Number(x.position)===1;}); var link=b&&b.button_link; if(link){ if(link.charAt(0)==='#'){var el=document.querySelector(link);if(el)el.scrollIntoView({behavior:'smooth'});}else{window.location.href=link;} } else scrollToProducts(); }
 
 /* ---------- config + products ---------- */
 async function loadConfig(){
@@ -742,7 +765,7 @@ async function loadMyOrders(){
 
 /* ---------- boot ---------- */
 (async function boot(){
-  await Promise.all([loadConfig(), loadProducts(), checkAuth()]);
+  await Promise.all([loadConfig(), loadProducts(), loadBanners(), checkAuth()]);
   updateBadges();
 })();
 </script>

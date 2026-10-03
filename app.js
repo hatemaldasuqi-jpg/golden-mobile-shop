@@ -16,7 +16,7 @@ app.use(
     contentSecurityPolicy: false, // the storefront needs Google Fonts; keep this simple for a small shop
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "4mb" }));
 app.use(cookieParser());
 app.use(attachUser);
 
@@ -44,12 +44,14 @@ app.use(async (req, res, next) => {
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
+app.use("/api/banners", require("./routes/banners"));
 
 app.get("/api/config", (req, res) => {
   res.json({ shopWhatsapp: process.env.SHOP_WHATSAPP || "" });
 });
 
 // Serve the storefront and admin dashboard.
+app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Basic error handler so a thrown error returns JSON instead of crashing.
