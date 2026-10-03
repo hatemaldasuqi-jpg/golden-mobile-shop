@@ -21,6 +21,14 @@ async function migrate() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS products (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -30,6 +38,7 @@ async function migrate() {
       discount_pct INTEGER,
       section TEXT NOT NULL DEFAULT 'deals', -- 'deals' | 'new'
       icon TEXT NOT NULL DEFAULT 'phone',
+      image_url TEXT,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -54,6 +63,7 @@ async function migrate() {
       qty INTEGER NOT NULL
     );
   `);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT`);
 }
 
 async function seedAdmin() {
@@ -98,6 +108,19 @@ async function seedProducts() {
   console.log(`Seeded ${seed.length} starter products`);
 }
 
+async function seedFeaturedProduct() {
+  const existing = await pool.query("SELECT id FROM products WHERE name_en = $1 LIMIT 1", ["Samsung Galaxy S25 Ultra"]);
+  if (existing.rowCount > 0) {
+    await pool.query("UPDATE products SET price=$1, image_url=$2, is_active=TRUE WHERE id=$3", [565, "/assets/samsung-s25-ultra.jpeg", existing.rows[0].id]);
+    return;
+  }
+  await pool.query(
+    `INSERT INTO products (name, name_en, price, old_price, discount_pct, section, icon, image_url)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    ["Samsung Galaxy S25 Ultra 256GB", "Samsung Galaxy S25 Ultra", 565, null, null, "deals", "phone", "/assets/samsung-s25-ultra.jpeg"]
+  );
+}
+
 let initPromise = null;
 
 // Safe to call on every request — only does real work once per warm
@@ -109,6 +132,7 @@ function init() {
       await migrate();
       await seedAdmin();
       await seedProducts();
+      await seedFeaturedProduct();
     })().catch((err) => {
       initPromise = null; // allow retrying on the next request if this failed
       throw err;

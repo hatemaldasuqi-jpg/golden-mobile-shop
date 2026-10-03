@@ -41,7 +41,7 @@ router.get("/all", requireAdmin, async (req, res, next) => {
 
 router.post("/", requireAdmin, async (req, res, next) => {
   try {
-    const { name, name_en, price, old_price, discount_pct, section, icon } = req.body || {};
+    const { name, name_en, price, old_price, discount_pct, section, icon, image_url } = req.body || {};
     if (!name || typeof price !== "number" || price <= 0) {
       return res.status(400).json({ error: "name and a positive numeric price are required" });
     }
@@ -50,8 +50,8 @@ router.post("/", requireAdmin, async (req, res, next) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO products (name, name_en, price, old_price, discount_pct, section, icon)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO products (name, name_en, price, old_price, discount_pct, section, icon, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [
         String(name).trim(),
         name_en ? String(name_en).trim() : null,
@@ -60,6 +60,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
         discount_pct || null,
         section || "deals",
         icon || "phone",
+        image_url ? String(image_url).trim() : null,
       ]
     );
 
@@ -75,7 +76,7 @@ router.put("/:id", requireAdmin, async (req, res, next) => {
     const existing = existingResult.rows[0];
     if (!existing) return res.status(404).json({ error: "Product not found" });
 
-    const { name, name_en, price, old_price, discount_pct, section, icon, is_active } = req.body || {};
+    const { name, name_en, price, old_price, discount_pct, section, icon, image_url, is_active } = req.body || {};
     if (section && !validSection(section)) {
       return res.status(400).json({ error: "section must be 'deals' or 'new'" });
     }
@@ -83,8 +84,8 @@ router.put("/:id", requireAdmin, async (req, res, next) => {
     const result = await pool.query(
       `UPDATE products SET
          name = $1, name_en = $2, price = $3, old_price = $4, discount_pct = $5,
-         section = $6, icon = $7, is_active = $8
-       WHERE id = $9 RETURNING *`,
+         section = $6, icon = $7, image_url = $8, is_active = $9
+       WHERE id = $10 RETURNING *`,
       [
         name !== undefined ? String(name).trim() : existing.name,
         name_en !== undefined ? name_en : existing.name_en,
@@ -93,6 +94,7 @@ router.put("/:id", requireAdmin, async (req, res, next) => {
         discount_pct !== undefined ? discount_pct : existing.discount_pct,
         section !== undefined ? section : existing.section,
         icon !== undefined ? icon : existing.icon,
+        image_url !== undefined ? image_url : existing.image_url,
         is_active !== undefined ? Boolean(is_active) : existing.is_active,
         req.params.id,
       ]

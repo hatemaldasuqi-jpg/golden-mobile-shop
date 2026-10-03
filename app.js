@@ -5,14 +5,6 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "change-this-to-a-long-random-string") {
-  console.warn(
-    "\n⚠️  WARNING: JWT_SECRET is missing or still the example value.\n" +
-      "   Set a real random JWT_SECRET in your .env (local) or in your\n" +
-      "   Vercel project's Environment Variables before going live.\n"
-  );
-}
-
 const { init } = require("./db/init");
 const pool = require("./db/database");
 const { attachUser } = require("./middleware/auth");

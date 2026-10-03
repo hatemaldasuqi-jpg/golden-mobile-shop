@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const pool = require("../db/database");
-const { signToken, setAuthCookie, clearAuthCookie, requireAuth } = require("../middleware/auth");
+const { createSession, clearSession, requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -37,8 +37,7 @@ router.post("/register", authLimiter, async (req, res, next) => {
     );
 
     const user = result.rows[0];
-    const token = signToken(user);
-    setAuthCookie(res, token);
+    await createSession(res, user);
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
     next(err);
@@ -57,16 +56,15 @@ router.post("/login", authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = signToken(user);
-    setAuthCookie(res, token);
+    await createSession(res, user);
     res.json({ user: publicUser(user) });
   } catch (err) {
     next(err);
   }
 });
 
-router.post("/logout", (req, res) => {
-  clearAuthCookie(res);
+router.post("/logout", async (req, res) => {
+  await clearSession(req, res);
   res.json({ ok: true });
 });
 
