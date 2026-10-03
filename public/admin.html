@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة تحكم Golden Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--blue-dark:#132A6E; --blue:#1D4ED8; --bg:#F5F7FB; --card:#fff; --line:#E3E7F0; --text:#151B2C; --muted:#6B7280; --red:#D93025;}
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text);}
+  .wrap{max-width:960px; margin:0 auto; padding:24px 16px 60px;}
+  h1{font-size:1.3rem; font-weight:900; color:var(--blue-dark); margin-bottom:4px;}
+  .muted{color:var(--muted); font-size:.85rem;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-top:18px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .field label{font-size:.78rem; color:var(--muted); font-weight:500;}
+  input, select, textarea{border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-family:inherit; font-size:.88rem; background:#fafbfd;}
+  button{font-family:inherit; cursor:pointer;}
+  .btn{background:var(--blue-dark); color:#fff; border:none; border-radius:9px; padding:10px 18px; font-weight:700; font-size:.85rem;}
+  .btn.secondary{background:none; border:1px solid var(--line); color:var(--text);}
+  .btn.danger{background:var(--red); color:#fff; border:none;}
+  .btn.small{padding:6px 12px; font-size:.78rem;}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row > .field{flex:1; min-width:140px;}
+  table{width:100%; border-collapse:collapse; font-size:.82rem; margin-top:8px;}
+  th, td{text-align:right; padding:9px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:700; font-size:.75rem;}
+  .tabs{display:flex; gap:8px; margin-top:20px;}
+  .tab{padding:9px 16px; border-radius:9px; border:1px solid var(--line); background:var(--card); font-weight:700; font-size:.85rem;}
+  .tab.active{background:var(--blue-dark); color:#fff; border-color:var(--blue-dark);}
+  .hidden{display:none;}
+  .error{background:#FDECEC; color:#B3261E; border-radius:8px; padding:9px 12px; font-size:.8rem; margin-bottom:12px;}
+  .status-select{padding:5px 8px; font-size:.75rem; border-radius:6px;}
+  .top-bar{display:flex; justify-content:space-between; align-items:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Login screen -->
+  <div id="login-screen">
+    <h1>لوحة تحكم Golden Mobile</h1>
+    <p class="muted">سجّل دخول بحساب الأدمن للمتابعة</p>
+    <div class="card" style="max-width:360px;">
+      <div id="login-error"></div>
+      <div class="field"><label>البريد الإلكتروني</label><input id="lg-email" type="email"></div>
+      <div class="field"><label>كلمة المرور</label><input id="lg-password" type="password"></div>
+      <button class="btn" style="width:100%" onclick="adminLogin()">دخول</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dash-screen" class="hidden">
+    <div class="top-bar">
+      <div><h1>لوحة تحكم Golden Mobile</h1><p class="muted" id="who"></p></div>
+      <button class="btn secondary small" onclick="adminLogout()">تسجيل الخروج</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-products" onclick="switchTab('products')">المنتجات</button>
+      <button class="tab" id="tab-orders" onclick="switchTab('orders')">الطلبات</button>
+    </div>
+
+    <!-- Products tab -->
+    <div id="panel-products">
+      <div class="card">
+        <h3 id="form-title" style="margin:0 0 12px;">إضافة منتج جديد</h3>
+        <input type="hidden" id="p-id">
+        <div class="row">
+          <div class="field"><label>الاسم (عربي)</label><input id="p-name"></div>
+          <div class="field"><label>الاسم (English)</label><input id="p-name-en"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>السعر الحالي (JD)</label><input id="p-price" type="number" step="0.01"></div>
+          <div class="field"><label>السعر قبل الخصم (اختياري)</label><input id="p-old-price" type="number" step="0.01"></div>
+          <div class="field"><label>نسبة الخصم % (اختياري)</label><input id="p-discount" type="number"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>القسم</label>
+            <select id="p-section"><option value="deals">عروض اليوم</option><option value="new">وصل حديثاً</option></select>
+          </div>
+          <div class="field"><label>الأيقونة</label>
+            <select id="p-icon">
+              <option value="phone">هاتف</option><option value="headphones">سماعات</option>
+              <option value="watch">ساعة</option><option value="battery">باور بانك</option>
+              <option value="plug">شاحن</option>
+            </select>
+          </div>
+        </div>
+        <div id="p-error"></div>
+        <button class="btn" onclick="saveProduct()">حفظ</button>
+        <button class="btn secondary" id="cancel-edit-btn" onclick="resetProductForm()" style="display:none">إلغاء التعديل</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead><tr><th>الاسم</th><th>السعر</th><th>القسم</th><th>مفعّل</th><th></th></tr></thead>
+          <tbody id="products-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders tab -->
+    <div id="panel-orders" class="hidden">
+      <div class="card">
+        <table>
+          <thead><tr><th>#</th><th>الزبون</th><th>الهاتف</th><th>العنوان</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <tbody id="orders-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var me = null;
+
+async function adminLogin(){
+  var email = document.getElementById('lg-email').value.trim();
+  var password = document.getElementById('lg-password').value;
+  try{
+    var res = await fetch('/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:email, password:password})});
+    var data = await res.json();
+    if(!res.ok){ showLoginError(data.error || 'خطأ'); return; }
+    if(data.user.role !== 'admin'){ showLoginError('هاد الحساب مش أدمن'); await fetch('/api/auth/logout',{method:'POST'}); return; }
+    me = data.user;
+    enterDashboard();
+  }catch(e){ showLoginError('خطأ بالاتصال'); }
+}
+function showLoginError(msg){ document.getElementById('login-error').innerHTML = '<div class="error">' + msg + '</div>'; }
+
+async function adminLogout(){
+  try{ await fetch('/api/auth/logout', {method:'POST'}); }catch(e){}
+  me = null;
+  document.getElementById('dash-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+function enterDashboard(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('dash-screen').classList.remove('hidden');
+  document.getElementById('who').textContent = me.name + ' · ' + me.email;
+  loadProducts();
+  loadOrders();
+}
+
+function switchTab(tab){
+  document.getElementById('tab-products').classList.toggle('active', tab==='products');
+  document.getElementById('tab-orders').classList.toggle('active', tab==='orders');
+  document.getElementById('panel-products').classList.toggle('hidden', tab!=='products');
+  document.getElementById('panel-orders').classList.toggle('hidden', tab!=='orders');
+}
+
+/* ---- products ---- */
+async function loadProducts(){
+  var res = await fetch('/api/products/all');
+  if(!res.ok) return;
+  var data = await res.json();
+  var tbody = document.getElementById('products-table');
+  tbody.innerHTML = data.products.map(function(p){
+    return '<tr><td>' + p.name + '</td><td>' + p.price.toFixed(2) + ' JD</td><td>' + (p.section==='deals'?'عروض اليوم':'وصل حديثاً') + '</td>' +
+      '<td>' + (p.is_active ? '✓' : '—') + '</td>' +
+      '<td><button class="btn secondary small" onclick=\'editProduct(' + JSON.stringify(p) + ')\'>تعديل</button> ' +
+      '<button class="btn danger small" onclick="deleteProduct(' + p.id + ')">حذف</button></td></tr>';
+  }).join('');
+}
+
+function editProduct(p){
+  document.getElementById('form-title').textContent = 'تعديل منتج #' + p.id;
+  document.getElementById('p-id').value = p.id;
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-name-en').value = p.name_en || '';
+  document.getElementById('p-price').value = p.price;
+  document.getElementById('p-old-price').value = p.old_price || '';
+  document.getElementById('p-discount').value = p.discount_pct || '';
+  document.getElementById('p-section').value = p.section;
+  document.getElementById('p-icon').value = p.icon;
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function resetProductForm(){
+  document.getElementById('form-title').textContent = 'إضافة منتج جديد';
+  ['p-id','p-name','p-name-en','p-price','p-old-price','p-discount'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('p-section').value = 'deals';
+  document.getElementById('p-icon').value = 'phone';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('p-error').innerHTML = '';
+}
+
+async function saveProduct(){
+  var id = document.getElementById('p-id').value;
+  var payload = {
+    name: document.getElementById('p-name').value.trim(),
+    name_en: document.getElementById('p-name-en').value.trim() || null,
+    price: parseFloat(document.getElementById('p-price').value),
+    old_price: document.getElementById('p-old-price').value ? parseFloat(document.getElementById('p-old-price').value) : null,
+    discount_pct: document.getElementById('p-discount').value ? parseInt(document.getElementById('p-discount').value) : null,
+    section: document.getElementById('p-section').value,
+    icon: document.getElementById('p-icon').value
+  };
+  if(!payload.name || !payload.price){
+    document.getElementById('p-error').innerHTML = '<div class="error">الاسم والسعر مطلوبين</div>';
+    return;
+  }
+  var url = id ? ('/api/products/' + id) : '/api/products';
+  var method = id ? 'PUT' : 'POST';
+  var res = await fetch(url, {method:method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  var data = await res.json();
+  if(!res.ok){ document.getElementById('p-error').innerHTML = '<div class="error">' + data.error + '</div>'; return; }
+  resetProductForm();
+  loadProducts();
+}
+
+async function deleteProduct(id){
+  if(!confirm('متأكد إنك بدك تحذف هاد المنتج؟')) return;
+  await fetch('/api/products/' + id, {method:'DELETE'});
+  loadProducts();
+}
+
+/* ---- orders ---- */
+async function loadOrders(){
+  var res = await fetch('/api/orders');
+  if(!res.ok) return;
+  var data = await res.json();
+  var tbody = document.getElementById('orders-table');
+  var statuses = ['pending','confirmed','delivered','cancelled'];
+  tbody.innerHTML = data.orders.map(function(o){
+    var opts = statuses.map(function(s){ return '<option value="'+s+'"' + (s===o.status?' selected':'') + '>'+s+'</option>'; }).join('');
+    return '<tr><td>#' + o.id + '</td><td>' + o.customer_name + '</td><td>' + o.phone + '</td><td>' + o.address + '</td>' +
+      '<td>' + o.total.toFixed(2) + ' JD</td>' +
+      '<td><select class="status-select" onchange="updateStatus(' + o.id + ',this.value)">' + opts + '</select></td>' +
+      '<td>' + o.created_at + '</td></tr>';
+  }).join('');
+}
+async function updateStatus(id, status){
+  await fetch('/api/orders/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status:status})});
+}
+
+/* ---- boot: if already logged in as admin, skip the login screen ---- */
+(async function boot(){
+  try{
+    var res = await fetch('/api/auth/me');
+    if(res.ok){
+      var data = await res.json();
+      if(data.user.role === 'admin'){ me = data.user; enterDashboard(); }
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
