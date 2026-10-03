@@ -47,7 +47,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/banners", require("./routes/banners"));
 
 app.get("/api/config", (req, res) => {
-  res.json({ shopWhatsapp: process.env.SHOP_WHATSAPP || "" });
+  res.json({ shopWhatsapp: process.env.SHOP_WHATSAPP || "962796480064" });
 });
 
 // Serve the storefront and admin dashboard.
