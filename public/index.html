@@ -457,7 +457,7 @@ function productCardHtml(p){
     '<div class="prod-thumb">' + (p.image_url ? '<img src="' + escapeHtml(p.image_url) + '" alt="' + escapeHtml(name) + '">' : '<svg class="ic"><use href="#i-' + (p.icon || 'phone') + '"/></svg>') + '</div>' +
     '<div class="prod-name">' + escapeHtml(name) + '</div>' +
     '<div class="price-row"><div class="price-block">' + priceBlock + '</div>' +
-    '<button class="cart-btn" onclick="event.stopPropagation();addToCart(' + p.id + ',' + JSON.stringify(name) + ',' + p.price + ')"><svg class="ic"><use href="#i-cart"/></svg></button></div></div>';
+    '<button class="cart-btn" onclick="event.stopPropagation();addProductToCart(' + p.id + ')"><svg class="ic"><use href="#i-cart"/></svg></button></div></div>';
 }
 function renderProducts(){
   var qEl = document.getElementById('product-search');
@@ -470,6 +470,13 @@ function renderProducts(){
 }
 
 /* ---------- cart ---------- */
+function addProductToCart(id){
+  var p = products.find(function(x){ return Number(x.id) === Number(id); });
+  if(!p) return;
+  var lang = document.documentElement.getAttribute('lang') || 'ar';
+  var name = (lang === 'en' && p.name_en) ? p.name_en : p.name;
+  addToCart(Number(p.id), String(name || ''), Number(p.price || 0));
+}
 function addToCart(id, name, price){
   if(!cart[id]) cart[id] = {name:name, price:price, qty:0};
   cart[id].qty += 1;
@@ -623,7 +630,7 @@ function openWishlist(){
   view='wishlist'; document.getElementById('cart-overlay').classList.add('open');
   document.getElementById('drawer-title').textContent=(document.documentElement.lang==='en'?'Wishlist':'المفضلة');
   var list=products.filter(function(p){return wishlist.indexOf(Number(p.id))!==-1;});
-  document.getElementById('drawer-body').innerHTML=list.length?list.map(function(p){var n=(document.documentElement.lang==='en'&&p.name_en)?p.name_en:p.name;return '<div class="cart-row" onclick="openProduct('+p.id+')"><div class="ci-thumb"><svg class="ic"><use href="#i-'+(p.icon||'phone')+'"/></svg></div><div class="ci-info"><div class="ci-name">'+escapeHtml(n)+'</div><div class="ci-price">'+Number(p.price).toFixed(2)+' JD</div></div><button class="cart-btn" onclick="event.stopPropagation();addToCart('+p.id+','+JSON.stringify(n)+','+p.price+')"><svg class="ic"><use href="#i-cart"/></svg></button></div>';}).join(''):'<div class="empty-note">'+(document.documentElement.lang==='en'?'No favorites yet.':'لا توجد منتجات مفضلة بعد.')+'</div>';
+  document.getElementById('drawer-body').innerHTML=list.length?list.map(function(p){var n=(document.documentElement.lang==='en'&&p.name_en)?p.name_en:p.name;return '<div class="cart-row" onclick="openProduct('+p.id+')"><div class="ci-thumb"><svg class="ic"><use href="#i-'+(p.icon||'phone')+'"/></svg></div><div class="ci-info"><div class="ci-name">'+escapeHtml(n)+'</div><div class="ci-price">'+Number(p.price).toFixed(2)+' JD</div></div><button class="cart-btn" onclick="event.stopPropagation();addProductToCart('+p.id+')"><svg class="ic"><use href="#i-cart"/></svg></button></div>';}).join(''):'<div class="empty-note">'+(document.documentElement.lang==='en'?'No favorites yet.':'لا توجد منتجات مفضلة بعد.')+'</div>';
   document.getElementById('drawer-footer').innerHTML='';
 }
 function openProduct(id){
@@ -631,7 +638,7 @@ function openProduct(id){
   var lang=document.documentElement.lang||'ar', name=(lang==='en'&&p.name_en)?p.name_en:p.name;
   view='product'; document.getElementById('cart-overlay').classList.add('open'); document.getElementById('drawer-title').textContent=name;
   document.getElementById('drawer-body').innerHTML='<div class="prod-thumb" style="max-width:280px;margin:10px auto 18px;font-size:4rem">'+(p.image_url?'<img src="'+escapeHtml(p.image_url)+'" alt="'+escapeHtml(name)+'">':'<svg class="ic"><use href="#i-'+(p.icon||'phone')+'"/></svg>')+'</div><h3 style="margin-bottom:8px">'+escapeHtml(name)+'</h3><div class="price-block"><span class="new" style="font-size:1.15rem">'+Number(p.price).toFixed(2)+' JD</span></div>';
-  document.getElementById('drawer-footer').innerHTML='<button class="btn-block" onclick="addToCart('+p.id+','+JSON.stringify(name)+','+p.price+');openCart()">'+(lang==='en'?'Add to cart':'أضف إلى السلة')+'</button>';
+  document.getElementById('drawer-footer').innerHTML='<button class="btn-block" onclick="addProductToCart('+p.id+');openCart()">'+(lang==='en'?'Add to cart':'أضف إلى السلة')+'</button>';
 }
 
 /* ---------- account ---------- */
