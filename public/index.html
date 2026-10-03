@@ -31,10 +31,8 @@
     border-radius:20px; padding:5px 10px; font-size:.7rem; font-weight:700; color:var(--blue-dark);
   }
   .lang-btn .ic{font-size:.9rem;}
-  .brand{display:flex; flex-direction:column; align-items:center; gap:2px;}
-  .brand .mark{width:26px; height:26px; color:var(--blue);}
-  .brand .name{font-weight:900; font-size:.82rem; color:var(--blue-dark); letter-spacing:.5px; line-height:1.1;}
-  .brand .name small{display:block; font-size:.56rem; font-weight:700; color:var(--muted); letter-spacing:1.5px; margin-top:1px;}
+  .brand{display:flex; align-items:center; justify-content:center; min-width:74px;}
+  .brand-logo{display:block; width:76px; height:50px; object-fit:contain;}
   .icon-row{display:flex; align-items:center; gap:14px;}
   .icon-btn{position:relative; font-size:1.35rem; background:none; border:none; color:var(--text); display:flex;}
   .badge-dot{
@@ -49,6 +47,8 @@
     border-radius:12px; padding:11px 14px; color:var(--muted); font-size:.86rem; direction:ltr;
   }
   .search-box .ic{font-size:1.1rem;}
+  .search-box input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit;direction:inherit;}
+  .search-box input::placeholder{color:var(--muted);}
 
   /* Categories */
   .cat-row{display:flex; align-items:center; gap:14px; padding:16px 16px 6px; overflow-x:auto; direction:ltr;}
@@ -97,7 +97,9 @@
   .sec-head a{font-size:.78rem; color:var(--blue); font-weight:700; display:flex; align-items:center; gap:4px;}
 
   .prod-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:0 16px 26px;}
-  .prod-card{border:1px solid var(--line); border-radius:14px; padding:10px; position:relative;}
+  .prod-card{border:1px solid var(--line); border-radius:14px; padding:10px; position:relative; cursor:pointer;}
+  .wish-btn{position:absolute;top:8px;right:8px;z-index:3;width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center;}
+  .wish-btn.on{color:#e5484d;}
   .disc-badge{position:absolute; top:8px; left:8px; background:var(--badge); color:#fff; font-size:.66rem; font-weight:700; padding:3px 8px; border-radius:6px; z-index:2;}
   .new-badge{position:absolute; top:8px; left:8px; background:var(--blue); color:#fff; font-size:.64rem; font-weight:700; padding:3px 8px; border-radius:6px; z-index:2;}
   .prod-thumb{aspect-ratio:1/1; background:var(--bg-alt); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--blue-dark); margin-bottom:10px;}
@@ -205,20 +207,17 @@
 <header class="topbar">
   <div class="wrap topbar-row">
     <button class="lang-btn" id="lang-toggle" aria-label="Switch language" onclick="toggleLang()"><svg class="ic"><use href="#i-globe"/></svg><span id="lang-label">EN</span></button>
-    <button class="menu-btn" aria-label="القائمة"><svg class="ic"><use href="#i-menu"/></svg></button>
-    <div class="brand">
-      <svg class="ic mark"><use href="#i-logo"/></svg>
-      <div class="name">GOLDEN<small>MOBILE</small></div>
-    </div>
+    <button class="menu-btn" aria-label="القائمة" onclick="scrollToProducts()"><svg class="ic"><use href="#i-menu"/></svg></button>
+    <div class="brand"><img class="brand-logo" src="/assets/golden-mobile-logo.webp" alt="Golden Mobile"></div>
     <div class="icon-row">
       <button class="icon-btn" id="theme-toggle" aria-label="الوضع الداكن/الفاتح" onclick="toggleTheme()"><svg class="ic"><use id="theme-icon-use" href="#i-moon"/></svg></button>
-      <button class="icon-btn" aria-label="المفضلة"><svg class="ic"><use href="#i-heart"/></svg><span class="badge-dot">2</span></button>
+      <button class="icon-btn" aria-label="المفضلة" onclick="openWishlist()"><svg class="ic"><use href="#i-heart"/></svg><span class="badge-dot" id="wishlist-count">0</span></button>
       <button class="icon-btn" aria-label="حسابي" onclick="openAccount()"><svg class="ic"><use href="#i-user"/></svg></button>
       <button class="icon-btn" aria-label="السلة" onclick="openCart()"><svg class="ic"><use href="#i-cart"/></svg><span class="badge-dot" id="badge-header-cart">0</span></button>
     </div>
   </div>
   <div class="search-wrap">
-    <div class="search-box"><svg class="ic"><use href="#i-search"/></svg><span data-i18n="search_ph">ابحث عن المنتجات...</span></div>
+    <div class="search-box"><svg class="ic"><use href="#i-search"/></svg><input id="product-search" type="search" placeholder="ابحث عن المنتجات..." oninput="renderProducts()"></div>
   </div>
   <div class="cat-row">
     <div class="cat-item"><div class="cat-icon"><svg class="ic"><use href="#i-phone"/></svg></div><span data-i18n="cat_phones">هواتف</span></div>
@@ -235,7 +234,7 @@
       <div class="hero-banner">
         <h2>Galaxy<br>S24 Ultra</h2>
         <p data-i18n="hero_desc">تجربة جديدة من القوة والأداء</p>
-        <button class="hero-cta" data-i18n="hero_cta">تسوّق الآن</button>
+        <button class="hero-cta" data-i18n="hero_cta" onclick="scrollToProducts()">تسوّق الآن</button>
         <svg class="hero-phone" viewBox="0 0 100 200" aria-hidden="true">
           <rect x="18" y="4" width="64" height="192" rx="20" fill="#C9CFDA"/>
           <rect x="24" y="10" width="52" height="180" rx="15" fill="#8A93A6"/>
@@ -263,10 +262,10 @@
     <div class="feature"><span class="ic-wrap"><svg class="ic"><use href="#i-headset"/></svg></span><span data-i18n="feat_support">دعم فني 24/7</span></div>
   </div>
 
-  <div class="sec-head"><h3 data-i18n="sec_deals">عروض اليوم</h3><a href="#"><span data-i18n="view_all">عرض الكل</span> <span data-i18n="chevron">‹</span></a></div>
+  <div class="sec-head"><h3 data-i18n="sec_deals">عروض اليوم</h3><a href="#grid-deals" onclick="clearSearch()"><span data-i18n="view_all">عرض الكل</span> <span data-i18n="chevron">‹</span></a></div>
   <div class="prod-grid" id="grid-deals"><div class="empty-note" data-i18n="loading">...جارِ التحميل</div></div>
 
-  <div class="sec-head"><h3 data-i18n="sec_new">وصل حديثاً</h3><a href="#"><span data-i18n="view_all">عرض الكل</span> <span data-i18n="chevron">‹</span></a></div>
+  <div class="sec-head"><h3 data-i18n="sec_new">وصل حديثاً</h3><a href="#grid-new" onclick="clearSearch()"><span data-i18n="view_all">عرض الكل</span> <span data-i18n="chevron">‹</span></a></div>
   <div class="prod-grid" id="grid-new"></div>
 </main>
 
@@ -285,9 +284,9 @@
 
 <nav class="bottom-nav">
   <button class="nav-item" onclick="openAccount()"><svg class="ic"><use href="#i-user"/></svg><span data-i18n="nav_account">حسابي</span></button>
-  <button class="nav-item"><svg class="ic"><use href="#i-heart"/></svg><span data-i18n="nav_wishlist">المفضلة</span><span class="nav-badge">2</span></button>
+  <button class="nav-item" onclick="openWishlist()"><svg class="ic"><use href="#i-heart"/></svg><span data-i18n="nav_wishlist">المفضلة</span><span class="nav-badge" id="wishlist-nav-count">0</span></button>
   <button class="nav-item" onclick="openCart()"><svg class="ic"><use href="#i-bag"/></svg><span data-i18n="nav_cart">السلة</span><span class="nav-badge" id="badge-nav-cart">0</span></button>
-  <button class="nav-item"><svg class="ic"><use href="#i-grid"/></svg><span data-i18n="nav_categories">الأقسام</span></button>
+  <button class="nav-item" onclick="scrollToProducts()"><svg class="ic"><use href="#i-grid"/></svg><span data-i18n="nav_categories">الأقسام</span></button>
   <button class="nav-item active"><svg class="ic ic-fill"><use href="#i-home-fill"/></svg><span data-i18n="nav_home">الرئيسية</span></button>
 </nav>
 
@@ -388,6 +387,7 @@ function applyLang(lang){
     var key = el.getAttribute('data-i18n');
     if(I18N[key]) el.textContent = I18N[key][lang];
   });
+  var search=document.getElementById('product-search'); if(search) search.placeholder=I18N.search_ph[lang];
   var label = document.getElementById('lang-label');
   if(label) label.textContent = lang === 'ar' ? 'EN' : 'AR';
   try{ localStorage.setItem('gm-lang', lang); }catch(e){}
@@ -410,6 +410,9 @@ var SHOP_WHATSAPP = ""; // fetched from the server at load time (/api/config)
 
 var products = [];
 var cart = {};
+try{ cart = JSON.parse(localStorage.getItem('gm-cart') || '{}') || {}; }catch(e){ cart = {}; }
+var wishlist = [];
+try{ wishlist = JSON.parse(localStorage.getItem('gm-wishlist') || '[]') || []; }catch(e){ wishlist = []; }
 var currentUser = null;
 var pendingCheckout = false;
 var authMode = "login"; // login | register
@@ -443,15 +446,20 @@ function productCardHtml(p){
   var priceBlock = p.old_price
     ? '<span class="old">' + Number(p.old_price).toFixed(2) + ' JD</span><span class="new">' + Number(p.price).toFixed(2) + ' JD</span>'
     : '<span class="new">' + Number(p.price).toFixed(2) + ' JD</span>';
-  return '<div class="prod-card">' + badge +
+  var wished = wishlist.indexOf(Number(p.id)) !== -1;
+  return '<div class="prod-card" onclick="openProduct(' + p.id + ')">' + badge +
+    '<button class="wish-btn ' + (wished?'on':'') + '" onclick="event.stopPropagation();toggleWishlist(' + p.id + ')" aria-label="Wishlist"><svg class="ic"><use href="#i-heart"/></svg></button>' +
     '<div class="prod-thumb"><svg class="ic"><use href="#i-' + (p.icon || 'phone') + '"/></svg></div>' +
-    '<div class="prod-name">' + name + '</div>' +
+    '<div class="prod-name">' + escapeHtml(name) + '</div>' +
     '<div class="price-row"><div class="price-block">' + priceBlock + '</div>' +
-    '<button class="cart-btn" onclick="addToCart(' + p.id + ',' + JSON.stringify(name) + ',' + p.price + ')"><svg class="ic"><use href="#i-cart"/></svg></button></div></div>';
+    '<button class="cart-btn" onclick="event.stopPropagation();addToCart(' + p.id + ',' + JSON.stringify(name) + ',' + p.price + ')"><svg class="ic"><use href="#i-cart"/></svg></button></div></div>';
 }
 function renderProducts(){
-  var deals = products.filter(function(p){ return p.section === 'deals'; });
-  var news = products.filter(function(p){ return p.section === 'new'; });
+  var qEl = document.getElementById('product-search');
+  var q = (qEl ? qEl.value : '').trim().toLowerCase();
+  var visible = products.filter(function(p){ return !q || String(p.name||'').toLowerCase().includes(q) || String(p.name_en||'').toLowerCase().includes(q); });
+  var deals = visible.filter(function(p){ return p.section === 'deals'; });
+  var news = visible.filter(function(p){ return p.section === 'new'; });
   document.getElementById('grid-deals').innerHTML = deals.map(productCardHtml).join('') || '<div class="empty-note">—</div>';
   document.getElementById('grid-new').innerHTML = news.map(productCardHtml).join('') || '<div class="empty-note">—</div>';
 }
@@ -473,11 +481,13 @@ function changeQty(id, delta){
 function cartCount(){ return Object.values(cart).reduce(function(s,i){return s+i.qty;},0); }
 function cartTotal(){ return Object.values(cart).reduce(function(s,i){return s+i.price*i.qty;},0); }
 function updateBadges(){
+  try{ localStorage.setItem('gm-cart', JSON.stringify(cart)); localStorage.setItem('gm-wishlist', JSON.stringify(wishlist)); }catch(e){}
   var c = cartCount();
   ["badge-header-cart","badge-nav-cart"].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.textContent = c;
   });
+  ["wishlist-count","wishlist-nav-count"].forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent=wishlist.length; });
 }
 
 function openCart(){
@@ -596,6 +606,26 @@ function openWhatsappInquiry(){
   window.open('https://wa.me/' + SHOP_WHATSAPP + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
+/* ---------- storefront interactions ---------- */
+function escapeHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function scrollToProducts(){ var el=document.getElementById('grid-deals'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function clearSearch(){ var el=document.getElementById('product-search'); if(el){el.value='';renderProducts();} }
+function toggleWishlist(id){ id=Number(id); var i=wishlist.indexOf(id); if(i===-1) wishlist.push(id); else wishlist.splice(i,1); updateBadges(); renderProducts(); }
+function openWishlist(){
+  view='wishlist'; document.getElementById('cart-overlay').classList.add('open');
+  document.getElementById('drawer-title').textContent=(document.documentElement.lang==='en'?'Wishlist':'المفضلة');
+  var list=products.filter(function(p){return wishlist.indexOf(Number(p.id))!==-1;});
+  document.getElementById('drawer-body').innerHTML=list.length?list.map(function(p){var n=(document.documentElement.lang==='en'&&p.name_en)?p.name_en:p.name;return '<div class="cart-row" onclick="openProduct('+p.id+')"><div class="ci-thumb"><svg class="ic"><use href="#i-'+(p.icon||'phone')+'"/></svg></div><div class="ci-info"><div class="ci-name">'+escapeHtml(n)+'</div><div class="ci-price">'+Number(p.price).toFixed(2)+' JD</div></div><button class="cart-btn" onclick="event.stopPropagation();addToCart('+p.id+','+JSON.stringify(n)+','+p.price+')"><svg class="ic"><use href="#i-cart"/></svg></button></div>';}).join(''):'<div class="empty-note">'+(document.documentElement.lang==='en'?'No favorites yet.':'لا توجد منتجات مفضلة بعد.')+'</div>';
+  document.getElementById('drawer-footer').innerHTML='';
+}
+function openProduct(id){
+  var p=products.find(function(x){return Number(x.id)===Number(id);}); if(!p)return;
+  var lang=document.documentElement.lang||'ar', name=(lang==='en'&&p.name_en)?p.name_en:p.name;
+  view='product'; document.getElementById('cart-overlay').classList.add('open'); document.getElementById('drawer-title').textContent=name;
+  document.getElementById('drawer-body').innerHTML='<div class="prod-thumb" style="max-width:220px;margin:10px auto 18px;font-size:4rem"><svg class="ic"><use href="#i-'+(p.icon||'phone')+'"/></svg></div><h3 style="margin-bottom:8px">'+escapeHtml(name)+'</h3><div class="price-block"><span class="new" style="font-size:1.15rem">'+Number(p.price).toFixed(2)+' JD</span></div>';
+  document.getElementById('drawer-footer').innerHTML='<button class="btn-block" onclick="addToCart('+p.id+','+JSON.stringify(name)+','+p.price+');openCart()">'+(lang==='en'?'Add to cart':'أضف إلى السلة')+'</button>';
+}
+
 /* ---------- account ---------- */
 async function checkAuth(){
   try{
@@ -698,11 +728,9 @@ async function loadMyOrders(){
 /* ---------- boot ---------- */
 (async function boot(){
   await Promise.all([loadConfig(), loadProducts(), checkAuth()]);
+  updateBadges();
 })();
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
